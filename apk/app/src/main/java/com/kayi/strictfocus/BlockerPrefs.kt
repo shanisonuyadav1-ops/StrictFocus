@@ -13,6 +13,7 @@ object BlockerPrefs {
     private const val KEY_END = "end_time"
     private const val KEY_LAST_SEEN = "last_seen"
     private const val KEY_PKGS = "blocked_pkgs"
+    private const val KEY_WAITING = "waiting_enable"
 
     @Volatile private var cached: SharedPreferences? = null
 
@@ -27,10 +28,9 @@ object BlockerPrefs {
             .putStringSet(KEY_PKGS, HashSet(pkgs))
             .putLong(KEY_END, now + minutes * 60_000L)
             .putLong(KEY_LAST_SEEN, now)
-            .commit() // commit = turant disk par likho (crash/restart safe)
+            .commit()
     }
 
-    /** true = lock abhi chal raha hai. Expire ho chuka ho to khud clear kar deta hai. */
     fun isActive(ctx: Context): Boolean {
         val p = prefs(ctx)
         val end = p.getLong(KEY_END, 0L)
@@ -40,7 +40,7 @@ object BlockerPrefs {
         val last = p.getLong(KEY_LAST_SEEN, now)
         var newEnd = end
 
-        // Anti-cheat: agar user ne system clock peeche kiya, to utna time end mein jod do
+        // Anti-cheat: clock peeche kiya to utna time jod do
         if (now < last) newEnd += (last - now)
 
         if (now >= newEnd) {
@@ -60,6 +60,14 @@ object BlockerPrefs {
 
     fun blocked(ctx: Context): Set<String> =
         prefs(ctx).getStringSet(KEY_PKGS, emptySet()) ?: emptySet()
+
+    // User Settings kholne gaya hai -> service ON hote hi app wapas khulega
+    fun setWaitingEnable(ctx: Context, value: Boolean) {
+        prefs(ctx).edit().putBoolean(KEY_WAITING, value).apply()
+    }
+
+    fun isWaitingEnable(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_WAITING, false)
 
     private fun clear(ctx: Context) {
         prefs(ctx).edit().clear().apply()

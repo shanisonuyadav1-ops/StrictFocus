@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     private val apps = mutableListOf<AppItem>()
     private var countDown: CountDownTimer? = null
+    private var askedPermission = false
 
     private lateinit var tvStatus: TextView
     private lateinit var btnAccess: Button
@@ -46,9 +47,7 @@ class MainActivity : AppCompatActivity() {
         tvTimer = findViewById(R.id.tvTimer)
         tvBlockedList = findViewById(R.id.tvBlockedList)
 
-        btnAccess.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
+        btnAccess.setOnClickListener { openAccessibilitySettings() }
         btnStart.setOnClickListener { confirmAndStart() }
 
         loadApps()
@@ -57,6 +56,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshUi()
+        // Service OFF hai to pehli baar khud poochho aur seedha Settings kholo
+        if (!isServiceEnabled() && !askedPermission) {
+            askedPermission = true
+            showPermissionDialog()
+        }
     }
 
     override fun onPause() {
@@ -64,7 +68,34 @@ class MainActivity : AppCompatActivity() {
         countDown?.cancel()
     }
 
-    // ---------- Apps ki list (background thread, UI hang nahi hoga) ----------
+    private fun showPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permission chahiye")
+            .setMessage(
+                "Strict Focus ko Accessibility permission chahiye, taaki wo pata laga sake " +
+                    "ki kaun sa app khula hai aur lock wale app ko band kar sake.\n\n" +
+                    "Ye sirf app ka naam dekhta hai. Aapka koi data kahin nahi bhejta.\n\n" +
+                    "Settings khulne par 'Strict Focus' ko ON karo."
+            )
+            .setPositiveButton("Settings kholo") { _, _ -> openAccessibilitySettings() }
+            .setNegativeButton("Baad mein", null)
+            .show()
+    }
+
+    private fun openAccessibilitySettings() {
+        BlockerPrefs.setWaitingEnable(this, true)
+        val cn = ComponentName(this, StrictBlockerService::class.java).flattenToString()
+        val args = Bundle().apply { putString(":settings:fragment_args_key", cn) }
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            .putExtra(":settings:fragment_args_key", cn)   // Strict Focus ko highlight karta hai
+            .putExtra(":settings:show_fragment_args", args)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+    }
+
     private fun loadApps() {
         Thread {
             val pm = packageManager
@@ -86,10 +117,10 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    // ---------- Lock start ----------
     private fun confirmAndStart() {
         if (!isServiceEnabled()) {
             Toast.makeText(this, "Pehle Accessibility Service ON karo", Toast.LENGTH_LONG).show()
+            showPermissionDialog()
             return
         }
         val mins = etMinutes.text.toString().toLongOrNull() ?: 0L
@@ -113,11 +144,10 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- UI state ----------
     private fun refreshUi() {
         countDown?.cancel()
         val serviceOn = isServiceEnabled()
-        tvStatus.text = if (serviceOn) "Service: ON ✅" else "Service: OFF ❌ (neeche button dabao)"
+        tvStatus.text = if (serviceOn) "Service: ON ✅" else "Service: OFF ❌"
         btnAccess.visibility = if (serviceOn) View.GONE else View.VISIBLE
 
         if (BlockerPrefs.isActive(this)) {

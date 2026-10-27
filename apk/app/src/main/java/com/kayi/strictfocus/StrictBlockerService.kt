@@ -1,16 +1,12 @@
 package com.kayi.strictfocus
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 import kotlin.math.ceil
 
-/**
- * Event-driven hai (koi polling/loop nahi) -> purane phone par bhi halka.
- * Phone restart ke baad Android khud is service ko dobara start kar deta hai
- * (agar Accessibility settings mein ON hai), isliye alag BootReceiver ki zaroorat nahi.
- */
 class StrictBlockerService : AccessibilityService() {
 
     private var lastToast = 0L
@@ -23,18 +19,35 @@ class StrictBlockerService : AccessibilityService() {
         "com.samsung.android.packageinstaller"
     )
 
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        // Sirf tab app wapas kholo jab user abhi abhi Settings se ON karke aaya ho
+        if (BlockerPrefs.isWaitingEnable(this)) {
+            BlockerPrefs.setWaitingEnable(this, false)
+            try {
+                startActivity(
+                    Intent(this, MainActivity::class.java).addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    )
+                )
+            } catch (e: Exception) {
+                // Kuch phones allow nahi karte; user back dabakar aa jayega
+            }
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
-        if (pkg == packageName) return                    // apna app kabhi block nahi
-        if (!BlockerPrefs.isActive(this)) return          // lock nahi chal raha
+        if (pkg == packageName) return
+        if (!BlockerPrefs.isActive(this)) return
 
-        // 1) Settings/uninstall se service band karne ya app hatane ki koshish rokna
         if (pkg in guardedPackages) {
             guardSettings()
             return
         }
 
-        // 2) Chune hue apps ko block karna
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             pkg in BlockerPrefs.blocked(this)
         ) {

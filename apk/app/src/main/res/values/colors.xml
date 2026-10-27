@@ -1,0 +1,7 @@
+<resources>
+    <color name="primary">#4F46E5</color>
+    <color name="primary_dark">#312E81</color>
+    <color name="violet">#7C3AED</color>
+    <color name="bg">#F4F6FF</color>
+    <color name="text_dark">#1F2937</color>
+</resources>
