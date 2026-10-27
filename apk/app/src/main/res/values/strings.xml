@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Strict Focus</string>
     <string name="service_label">Strict Focus</string>
-    <string name="service_desc">Timer chalne tak chune hue apps ko khulne se rokta hai.</string>
+    <string name="service_desc">Blocks the apps you selected until the timer ends.</string>
 </resources>

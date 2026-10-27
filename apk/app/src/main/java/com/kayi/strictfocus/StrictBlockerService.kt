@@ -70,7 +70,7 @@ class StrictBlockerService : AccessibilityService() {
         if (now - lastToast < 2000) return
         lastToast = now
         val mins = ceil(BlockerPrefs.remainingMs(this) / 60_000.0).toInt()
-        Toast.makeText(this, "Strict Focus: $mins min baaki hain", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Strict Focus: $mins min left", Toast.LENGTH_SHORT).show()
     }
 
     override fun onInterrupt() {}

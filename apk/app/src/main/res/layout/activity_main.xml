@@ -39,6 +39,14 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="by Sonu Yadav"
+                android:textColor="#C7D2FE"
+                android:textSize="15sp"
+                android:textStyle="italic" />
+
+            <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -60,7 +68,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:background="@drawable/bg_button_warn"
-            android:text="Accessibility Service ON karo"
+            android:text="Turn on Accessibility Service"
             android:textAllCaps="false"
             android:textColor="#1F2937"
             android:textStyle="bold" />
@@ -79,7 +87,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Block karne wale apps chuno"
+                android:text="Select apps to block"
                 android:textColor="#4F46E5"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -99,7 +107,7 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_input"
-                android:hint="Kitne minute? (jaise 60)"
+                android:hint="Minutes (e.g. 60)"
                 android:inputType="number"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
@@ -112,7 +120,7 @@
                 android:layout_height="54dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button"
-                android:text="🔒  Strict Lock Start Karo"
+                android:text="🔒  Start Strict Lock"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
@@ -160,4 +168,17 @@
                 android:textSize="15sp" />
         </LinearLayout>
     </LinearLayout>
+
+    <!-- Instagram link (sabse neeche) -->
+    <TextView
+        android:id="@+id/tvInstagram"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/selectableItemBackground"
+        android:gravity="center"
+        android:padding="14dp"
+        android:text="📸 Follow me on Instagram: @army.boy_hu"
+        android:textColor="#4F46E5"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 </LinearLayout>

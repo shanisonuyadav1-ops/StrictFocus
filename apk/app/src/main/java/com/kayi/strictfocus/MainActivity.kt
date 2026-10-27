@@ -2,6 +2,7 @@ package com.kayi.strictfocus
 
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.provider.Settings
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity() {
 
         btnAccess.setOnClickListener { openAccessibilitySettings() }
         btnStart.setOnClickListener { confirmAndStart() }
+        findViewById<TextView>(R.id.tvInstagram).setOnClickListener { openInstagram() }
 
         loadApps()
     }
@@ -70,15 +72,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPermissionDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Permission chahiye")
+            .setTitle("Permission needed")
             .setMessage(
-                "Strict Focus ko Accessibility permission chahiye, taaki wo pata laga sake " +
-                    "ki kaun sa app khula hai aur lock wale app ko band kar sake.\n\n" +
-                    "Ye sirf app ka naam dekhta hai. Aapka koi data kahin nahi bhejta.\n\n" +
-                    "Settings khulne par 'Strict Focus' ko ON karo."
+                "Strict Focus needs the Accessibility permission to detect which app is open " +
+                    "and close the apps you locked.\n\n" +
+                    "It only reads the app name. It never sends any data anywhere.\n\n" +
+                    "When Settings opens, turn ON 'Strict Focus'."
             )
-            .setPositiveButton("Settings kholo") { _, _ -> openAccessibilitySettings() }
-            .setNegativeButton("Baad mein", null)
+            .setPositiveButton("Open Settings") { _, _ -> openAccessibilitySettings() }
+            .setNegativeButton("Later", null)
             .show()
     }
 
@@ -93,6 +95,14 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         } catch (e: Exception) {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+    }
+
+    private fun openInstagram() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/army.boy_hu")))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not open Instagram", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -119,24 +129,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun confirmAndStart() {
         if (!isServiceEnabled()) {
-            Toast.makeText(this, "Pehle Accessibility Service ON karo", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Please turn on the Accessibility Service first", Toast.LENGTH_LONG).show()
             showPermissionDialog()
             return
         }
         val mins = etMinutes.text.toString().toLongOrNull() ?: 0L
         if (mins <= 0L) {
-            Toast.makeText(this, "Sahi minutes daalo", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Enter a valid number of minutes", Toast.LENGTH_SHORT).show()
             return
         }
         val selected = apps.indices.filter { listView.isItemChecked(it) }.map { apps[it].pkg }.toSet()
         if (selected.isEmpty()) {
-            Toast.makeText(this, "Kam se kam ek app chuno", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Select at least one app", Toast.LENGTH_SHORT).show()
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Pakka lock karna hai?")
-            .setMessage("${selected.size} app(s) $mins minute ke liye lock honge.\nBeech mein unlock NAHI hoga.")
-            .setPositiveButton("Haan, lock karo") { _, _ ->
+            .setTitle("Start strict lock?")
+            .setMessage("${selected.size} app(s) will be locked for $mins minute(s).\nYou will NOT be able to unlock them until the timer ends.")
+            .setPositiveButton("Yes, lock") { _, _ ->
                 BlockerPrefs.start(this, selected, mins)
                 refreshUi()
             }
