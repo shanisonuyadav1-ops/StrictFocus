@@ -73,17 +73,7 @@
             android:textColor="#1F2937"
             android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnAdmin"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_button_warn"
-            android:text="Turn on Uninstall Protection"
-            android:textAllCaps="false"
-            android:textColor="#1F2937"
-            android:textStyle="bold" />
-
+        
         <!-- Setup panel -->
         <LinearLayout
             android:id="@+id/panelSetup"

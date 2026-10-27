@@ -10,15 +10,7 @@ import kotlin.math.ceil
 class StrictBlockerService : AccessibilityService() {
 
     private var lastToast = 0L
-    private var lastGuard = 0L
     private var lastKick = 0L
-
-    private val guardedPackages = setOf(
-        "com.android.settings",
-        "com.google.android.packageinstaller",
-        "com.android.packageinstaller",
-        "com.samsung.android.packageinstaller"
-    )
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -45,11 +37,6 @@ class StrictBlockerService : AccessibilityService() {
         val blocked = BlockerPrefs.blockedNow(this)
         if (blocked.isEmpty()) return                      // koi lock nahi chal raha
 
-        // Settings / uninstall screens: Strict Focus ka naam dikhe to Home
-        if (pkg in guardedPackages) {
-            guardSettings()
-            return
-        }
         if (pkg !in blocked) return
 
         when (event.eventType) {
@@ -66,15 +53,6 @@ class StrictBlockerService : AccessibilityService() {
         lastKick = now
         performGlobalAction(GLOBAL_ACTION_HOME)
         showRemainingToast()
-    }
-
-    private fun guardSettings() {
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastGuard < 400) return
-        lastGuard = now
-        val root = rootInActiveWindow ?: return
-        val hits = root.findAccessibilityNodeInfosByText(getString(R.string.app_name))
-        if (!hits.isNullOrEmpty()) performGlobalAction(GLOBAL_ACTION_HOME)
     }
 
     private fun showRemainingToast() {

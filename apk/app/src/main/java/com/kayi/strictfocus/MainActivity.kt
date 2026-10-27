@@ -1,9 +1,7 @@
 package com.kayi.strictfocus
 
 import android.app.TimePickerDialog
-import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -29,13 +27,11 @@ class MainActivity : AppCompatActivity() {
     private val apps = mutableListOf<AppItem>()
     private var countDown: CountDownTimer? = null
     private var askedPermission = false
-    private var askedAdmin = false
     private var schStart = 22 * 60
     private var schEnd = 6 * 60
 
     private lateinit var tvStatus: TextView
     private lateinit var btnAccess: Button
-    private lateinit var btnAdmin: Button
     private lateinit var panelSetup: View
     private lateinit var panelLocked: View
     private lateinit var listView: ListView
@@ -53,15 +49,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTimer: TextView
     private lateinit var tvBlockedList: TextView
 
-    private val adminCn by lazy { ComponentName(this, AdminReceiver::class.java) }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         tvStatus = findViewById(R.id.tvStatus)
         btnAccess = findViewById(R.id.btnAccessibility)
-        btnAdmin = findViewById(R.id.btnAdmin)
         panelSetup = findViewById(R.id.panelSetup)
         panelLocked = findViewById(R.id.panelLocked)
         listView = findViewById(R.id.appList)
@@ -87,7 +80,6 @@ class MainActivity : AppCompatActivity() {
         updateModeUi()
 
         btnAccess.setOnClickListener { openAccessibilitySettings() }
-        btnAdmin.setOnClickListener { requestAdmin() }
         btnStart.setOnClickListener { confirmAndStart() }
         btnFrom.setOnClickListener { pickTime(schStart) { schStart = it; updateTimeButtons() } }
         btnTo.setOnClickListener { pickTime(schEnd) { schEnd = it; updateTimeButtons() } }
@@ -106,9 +98,6 @@ class MainActivity : AppCompatActivity() {
                 askedPermission = true
                 showPermissionDialog()
             }
-        } else if (!isAdminActive() && !askedAdmin) {
-            askedAdmin = true
-            showAdminDialog()
         }
     }
 
@@ -130,39 +119,6 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Open Settings") { _, _ -> openAccessibilitySettings() }
             .setNegativeButton("Later", null)
             .show()
-    }
-
-    private fun showAdminDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Uninstall protection")
-            .setMessage(
-                "To stop Strict Focus from being uninstalled while a lock is running, " +
-                    "Android needs you to activate it as a device admin.\n\n" +
-                    "This does NOT give the app access to your data, files or screen lock. " +
-                    "On the next screen, tap 'Activate'."
-            )
-            .setPositiveButton("Continue") { _, _ -> requestAdmin() }
-            .setNegativeButton("Later", null)
-            .show()
-    }
-
-    private fun requestAdmin() {
-        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-            .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminCn)
-            .putExtra(
-                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "Prevents Strict Focus from being uninstalled while a lock is running."
-            )
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Could not open the device admin screen", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun isAdminActive(): Boolean {
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        return dpm.isAdminActive(adminCn)
     }
 
     private fun openAccessibilitySettings() {
@@ -237,11 +193,6 @@ class MainActivity : AppCompatActivity() {
             showPermissionDialog()
             return
         }
-        if (!isAdminActive()) {
-            Toast.makeText(this, "Please turn on uninstall protection first", Toast.LENGTH_LONG).show()
-            showAdminDialog()
-            return
-        }
         val selected = apps.indices.filter { listView.isItemChecked(it) }.map { apps[it].pkg }.toSet()
         if (selected.isEmpty()) {
             Toast.makeText(this, "Select at least one app", Toast.LENGTH_SHORT).show()
@@ -260,7 +211,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Start strict lock?")
             .setMessage(
                 "${selected.size} app(s) will be locked for $mins minute(s).\n" +
-                    "You will NOT be able to unlock them or uninstall Strict Focus until the timer ends."
+                    "The selected apps will be blocked until the timer ends."
             )
             .setPositiveButton("Yes, lock") { _, _ ->
                 BlockerPrefs.start(this, selected, mins)
@@ -282,7 +233,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Save daily schedule?")
             .setMessage(
                 "${selected.size} app(s) will be locked every day from ${fmt(schStart)} to ${fmt(schEnd)}.\n\n" +
-                    "During that time you cannot unlock them, uninstall Strict Focus, or change the schedule." +
+                    "During that time the selected apps will be blocked." +
                     if (startsNow) "\n\nThe lock starts right now." else ""
             )
             .setPositiveButton("Yes, save") { _, _ ->
@@ -306,11 +257,8 @@ class MainActivity : AppCompatActivity() {
     private fun refreshUi() {
         countDown?.cancel()
         val a = isServiceEnabled()
-        val d = isAdminActive()
-        tvStatus.text = "Accessibility: " + (if (a) "ON ✅" else "OFF ❌") +
-            "\nUninstall protection: " + (if (d) "ON ✅" else "OFF ❌")
+        tvStatus.text = "Accessibility: " + (if (a) "ON ✅" else "OFF ❌")
         btnAccess.visibility = if (a) View.GONE else View.VISIBLE
-        btnAdmin.visibility = if (d) View.GONE else View.VISIBLE
 
         if (BlockerPrefs.isLocked(this)) {
             panelSetup.visibility = View.GONE
