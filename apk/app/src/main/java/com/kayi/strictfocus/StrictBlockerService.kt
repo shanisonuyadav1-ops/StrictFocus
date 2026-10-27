@@ -11,6 +11,7 @@ class StrictBlockerService : AccessibilityService() {
 
     private var lastToast = 0L
     private var lastGuard = 0L
+    private var lastKick = 0L
 
     private val guardedPackages = setOf(
         "com.android.settings",
@@ -21,7 +22,7 @@ class StrictBlockerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        // Sirf tab app wapas kholo jab user abhi abhi Settings se ON karke aaya ho
+        // Sirf tab app wapas kholo jab user abhi Settings se ON karke aaya ho
         if (BlockerPrefs.isWaitingEnable(this)) {
             BlockerPrefs.setWaitingEnable(this, false)
             try {
@@ -33,7 +34,6 @@ class StrictBlockerService : AccessibilityService() {
                     )
                 )
             } catch (e: Exception) {
-                // Kuch phones allow nahi karte; user back dabakar aa jayega
             }
         }
     }
@@ -41,19 +41,31 @@ class StrictBlockerService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg == packageName) return
-        if (!BlockerPrefs.isActive(this)) return
 
+        val blocked = BlockerPrefs.blockedNow(this)
+        if (blocked.isEmpty()) return                      // koi lock nahi chal raha
+
+        // Settings / uninstall screens: Strict Focus ka naam dikhe to Home
         if (pkg in guardedPackages) {
             guardSettings()
             return
         }
+        if (pkg !in blocked) return
 
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            pkg in BlockerPrefs.blocked(this)
-        ) {
-            performGlobalAction(GLOBAL_ACTION_HOME)
-            showRemainingToast()
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> kick()
+            // Schedule start hone par app pehle se khula ho to bhi band ho
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ->
+                if (rootInActiveWindow?.packageName?.toString() == pkg) kick()
         }
+    }
+
+    private fun kick() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastKick < 300) return
+        lastKick = now
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        showRemainingToast()
     }
 
     private fun guardSettings() {
@@ -69,7 +81,7 @@ class StrictBlockerService : AccessibilityService() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastToast < 2000) return
         lastToast = now
-        val mins = ceil(BlockerPrefs.remainingMs(this) / 60_000.0).toInt()
+        val mins = ceil(BlockerPrefs.lockRemainingMs(this) / 60_000.0).toInt()
         Toast.makeText(this, "Strict Focus: $mins min left", Toast.LENGTH_SHORT).show()
     }
 

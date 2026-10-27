@@ -5,7 +5,7 @@
     android:background="@color/bg"
     android:orientation="vertical">
 
-    <!-- Rangeen header -->
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -13,9 +13,9 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="20dp"
-        android:paddingTop="24dp"
+        android:paddingTop="20dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="20dp">
 
         <ImageView
             android:layout_width="64dp"
@@ -52,7 +52,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textColor="#E0E7FF"
-                android:textSize="14sp" />
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -66,9 +66,20 @@
         <Button
             android:id="@+id/btnAccessibility"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="48dp"
             android:background="@drawable/bg_button_warn"
             android:text="Turn on Accessibility Service"
+            android:textAllCaps="false"
+            android:textColor="#1F2937"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_button_warn"
+            android:text="Turn on Uninstall Protection"
             android:textAllCaps="false"
             android:textColor="#1F2937"
             android:textStyle="bold" />
@@ -101,18 +112,124 @@
                 android:divider="#EEF2FF"
                 android:dividerHeight="1dp" />
 
-            <EditText
-                android:id="@+id/etMinutes"
+            <!-- Saved schedule info -->
+            <LinearLayout
+                android:id="@+id/panelScheduleInfo"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_input"
-                android:hint="Minutes (e.g. 60)"
-                android:inputType="number"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:textColor="#1F2937"
-                android:textColorHint="#9CA3AF" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvScheduleInfo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#4B5563"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnRemoveSchedule"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_button_warn"
+                    android:minWidth="0dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:text="Remove"
+                    android:textAllCaps="false"
+                    android:textColor="#1F2937" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:id="@+id/rgMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rbTimer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="Timer" />
+
+                <RadioButton
+                    android:id="@+id/rbSchedule"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Daily schedule" />
+            </RadioGroup>
+
+            <!-- Timer mode -->
+            <LinearLayout
+                android:id="@+id/secTimer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/etMinutes"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_input"
+                    android:hint="Minutes (e.g. 60)"
+                    android:inputType="number"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:textColor="#1F2937"
+                    android:textColorHint="#9CA3AF" />
+            </LinearLayout>
+
+            <!-- Schedule mode -->
+            <LinearLayout
+                android:id="@+id/secSchedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnFrom"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_input"
+                        android:textAllCaps="false"
+                        android:textColor="#4F46E5"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnTo"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_input"
+                        android:textAllCaps="false"
+                        android:textColor="#4F46E5"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Repeats every day. Overnight works too (e.g. 22:00 to 06:00)."
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btnStart"
@@ -120,7 +237,6 @@
                 android:layout_height="54dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button"
-                android:text="🔒  Start Strict Lock"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
@@ -141,6 +257,7 @@
             android:visibility="gone">
 
             <TextView
+                android:id="@+id/tvLockTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🔒 Strict Lock ON"
