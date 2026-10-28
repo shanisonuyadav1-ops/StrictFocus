@@ -17,7 +17,9 @@ class StrictBlockerService : AccessibilityService() {
         "com.android.settings",
         "com.google.android.packageinstaller",
         "com.android.packageinstaller",
-        "com.samsung.android.packageinstaller"
+        "com.samsung.android.packageinstaller",
+        "com.miui.packageinstaller",
+        "com.miui.global.packageinstaller"
     )
 
     override fun onServiceConnected() {
