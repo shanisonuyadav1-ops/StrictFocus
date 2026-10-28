@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
             .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminCn)
             .putExtra(
                 DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "Prevents Strict Focus from being uninstalled while a lock is running."
+                "Adds an extra system confirmation step before Strict Focus can be uninstalled."
             )
         try {
             startActivity(intent)
