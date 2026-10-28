@@ -136,10 +136,9 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Uninstall protection")
             .setMessage(
-                "To stop Strict Focus from being uninstalled while a lock is running, " +
-                    "Android needs you to activate it as a device admin.\n\n" +
-                    "This does NOT give the app access to your data, files or screen lock. " +
-                    "On the next screen, tap 'Activate'."
+                "Device Admin adds an extra step before Strict Focus can be uninstalled: Android asks you to deactivate Device Admin first.\n\n" +
+                    "Important: Android still allows you to deactivate Device Admin, even during a lock. A normal app cannot completely block that system action.\n\n" +
+                    "This does not give Strict Focus access to your files or personal data. On the next screen, tap 'Activate'."
             )
             .setPositiveButton("Continue") { _, _ -> requestAdmin() }
             .setNegativeButton("Later", null)
