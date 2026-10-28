@@ -1,6 +1,7 @@
 package com.kayi.strictfocus
 
 import android.app.TimePickerDialog
+import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
@@ -21,6 +22,10 @@ import androidx.appcompat.app.AppCompatActivity
 import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val REQUEST_DEVICE_ADMIN = 701
+    }
 
     private data class AppItem(val label: String, val pkg: String)
 
@@ -187,10 +192,45 @@ class MainActivity : AppCompatActivity() {
     private fun fmt(min: Int) = String.format("%02d:%02d", min / 60, min % 60)
 
     // ---------------- Start lock ----------------
+    // Device Admin adds a system-level uninstall barrier, but Android still lets
+    // the device user deactivate the admin after reading the warning.
+    private fun isDeviceAdminActive(): Boolean {
+        val manager = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        return manager.isAdminActive(ComponentName(this, AdminReceiver::class.java))
+    }
+
+    private fun requestDeviceAdmin() {
+        AlertDialog.Builder(this)
+            .setTitle("Enable uninstall protection")
+            .setMessage(
+                "Android requires you to enable Device Admin before starting a lock. " +
+                    "This makes Android ask for admin deactivation before uninstalling Strict Focus. " +
+                    "If you deactivate it during a lock, Android can still allow that action."
+            )
+            .setPositiveButton("Enable") { _, _ ->
+                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                    .putExtra(
+                        DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                        ComponentName(this, AdminReceiver::class.java)
+                    )
+                    .putExtra(
+                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        "Strict Focus uses Device Admin to add an extra step before uninstall."
+                    )
+                startActivityForResult(intent, REQUEST_DEVICE_ADMIN)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun confirmAndStart() {
         if (!isServiceEnabled()) {
             Toast.makeText(this, "Please turn on the Accessibility Service first", Toast.LENGTH_LONG).show()
             showPermissionDialog()
+            return
+        }
+        if (!isDeviceAdminActive()) {
+            requestDeviceAdmin()
             return
         }
         val selected = apps.indices.filter { listView.isItemChecked(it) }.map { apps[it].pkg }.toSet()
