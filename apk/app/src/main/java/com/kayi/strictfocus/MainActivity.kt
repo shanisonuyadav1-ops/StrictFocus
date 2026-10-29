@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshUi()
+        if (hasUsageAccess() && (BlockerPrefs.isLocked(this) || BlockerPrefs.hasSchedule(this))) startUsageMonitor()
         if (!hasUsageAccess()) {
             if (!askedPermission) {
                 askedPermission = true
