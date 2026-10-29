@@ -15,7 +15,8 @@ import android.os.Looper
 
 /**
  * Best-effort app monitor that uses Usage Access instead of Accessibility.
- * Some manufacturers may delay or stop background monitoring.
+ * Android and some manufacturers may delay or stop background monitoring,
+ * so this cannot guarantee instant blocking on every device.
  */
 class UsageMonitorService : Service() {
     private val handler = Handler(Looper.getMainLooper())
@@ -27,7 +28,8 @@ class UsageMonitorService : Service() {
                 return
             }
             checkForegroundApp()
-            handler.postDelayed(this, 900L)
+            // Poll more frequently to reduce the app-switch detection delay.
+            handler.postDelayed(this, 300L)
         }
     }
 
@@ -60,7 +62,8 @@ class UsageMonitorService : Service() {
         if (blocked.isEmpty()) return
         val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val now = System.currentTimeMillis()
-        val events = manager.queryEvents(now - 10_000L, now)
+        // A short window avoids repeatedly acting on old foreground events.
+        val events = manager.queryEvents(now - 3_000L, now)
         val event = UsageEvents.Event()
         var foreground: String? = null
         while (events.hasNextEvent()) {
@@ -72,7 +75,7 @@ class UsageMonitorService : Service() {
         }
         if (foreground != null && foreground in blocked) {
             val elapsed = android.os.SystemClock.elapsedRealtime()
-            if (elapsed - lastKick > 1200L) {
+            if (elapsed - lastKick > 500L) {
                 lastKick = elapsed
                 val home = Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_HOME)
