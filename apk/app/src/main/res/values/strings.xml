@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Strict Focus</string>
+    <string name="service_label">Strict Focus</string>
+    <string name="service_desc">Blocks the apps you selected until the timer ends.</string>
     <string name="monitor_channel">Strict Focus monitor</string>
     <string name="monitor_notification">Your focus lock is active</string>
 </resources>
