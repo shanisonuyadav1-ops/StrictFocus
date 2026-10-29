@@ -68,7 +68,7 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:background="@drawable/bg_button_warn"
-            android:text="Turn on Accessibility Service"
+            android:text="Enable Usage Access"
             android:textAllCaps="false"
             android:textColor="#1F2937"
             android:textStyle="bold" />
