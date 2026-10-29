@@ -22,7 +22,7 @@ class UsageMonitorService : Service() {
     private var lastKick = 0L
     private val poll = object : Runnable {
         override fun run() {
-            if (!BlockerPrefs.isLocked(this@UsageMonitorService)) {
+            if (!BlockerPrefs.isLocked(this@UsageMonitorService) && !BlockerPrefs.hasSchedule(this@UsageMonitorService)) {
                 stopSelf()
                 return
             }
