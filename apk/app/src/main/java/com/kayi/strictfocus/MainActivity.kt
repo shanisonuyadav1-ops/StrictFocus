@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         updateTimeButtons()
         updateModeUi()
 
-        btnAccess.setOnClickListener { openAccessibilitySettings() }
+        btnAccess.setOnClickListener { openUsageAccessSettings() }
         btnAdmin.setOnClickListener { requestAdmin() }
         btnStart.setOnClickListener { confirmAndStart() }
         btnFrom.setOnClickListener { pickTime(schStart) { schStart = it; updateTimeButtons() } }
@@ -101,7 +101,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshUi()
-        if (!isServiceEnabled()) {
+        if (hasUsageAccess() && (BlockerPrefs.isLocked(this) || BlockerPrefs.hasSchedule(this))) startUsageMonitor()
+        if (!hasUsageAccess()) {
             if (!askedPermission) {
                 askedPermission = true
                 showPermissionDialog()
@@ -122,12 +123,10 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Permission needed")
             .setMessage(
-                "Strict Focus needs the Accessibility permission to detect which app is open " +
-                    "and close the apps you locked.\n\n" +
-                    "It only reads the app name. It never sends any data anywhere.\n\n" +
-                    "When Settings opens, turn ON 'Strict Focus'."
+                "Strict Focus needs Usage Access to detect which selected app is open. It does not use Accessibility permission.\n\n" +
+                    "Enable Usage Access for Strict Focus in Settings. Blocking may be delayed on some phones due to battery restrictions."
             )
-            .setPositiveButton("Open Settings") { _, _ -> openAccessibilitySettings() }
+            .setPositiveButton("Open Settings") { _, _ -> openUsageAccessSettings() }
             .setNegativeButton("Later", null)
             .show()
     }
@@ -164,17 +163,11 @@ class MainActivity : AppCompatActivity() {
         return dpm.isAdminActive(adminCn)
     }
 
-    private fun openAccessibilitySettings() {
-        BlockerPrefs.setWaitingEnable(this, true)
-        val cn = ComponentName(this, StrictBlockerService::class.java).flattenToString()
-        val args = Bundle().apply { putString(":settings:fragment_args_key", cn) }
-        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            .putExtra(":settings:fragment_args_key", cn)
-            .putExtra(":settings:show_fragment_args", args)
+    private fun openUsageAccessSettings() {
         try {
-            startActivity(intent)
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         } catch (e: Exception) {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            Toast.makeText(this, "Could not open Usage Access settings", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -231,8 +224,8 @@ class MainActivity : AppCompatActivity() {
 
     // ---------------- Start lock ----------------
     private fun confirmAndStart() {
-        if (!isServiceEnabled()) {
-            Toast.makeText(this, "Please turn on the Accessibility Service first", Toast.LENGTH_LONG).show()
+        if (!hasUsageAccess()) {
+            Toast.makeText(this, "Please enable Usage Access first", Toast.LENGTH_LONG).show()
             showPermissionDialog()
             return
         }
@@ -263,6 +256,7 @@ class MainActivity : AppCompatActivity() {
             )
             .setPositiveButton("Yes, lock") { _, _ ->
                 BlockerPrefs.start(this, selected, mins)
+                startUsageMonitor()
                 refreshUi()
             }
             .setNegativeButton("Cancel", null)
@@ -286,6 +280,7 @@ class MainActivity : AppCompatActivity() {
             )
             .setPositiveButton("Yes, save") { _, _ ->
                 BlockerPrefs.saveSchedule(this, selected, schStart, schEnd)
+                startUsageMonitor()
                 refreshUi()
             }
             .setNegativeButton("Cancel", null)
@@ -304,9 +299,9 @@ class MainActivity : AppCompatActivity() {
     // ---------------- UI state ----------------
     private fun refreshUi() {
         countDown?.cancel()
-        val a = isServiceEnabled()
+        val a = hasUsageAccess()
         val d = isAdminActive()
-        tvStatus.text = "Accessibility: " + (if (a) "ON ✅" else "OFF ❌") +
+        tvStatus.text = "Usage Access: " + (if (a) "ON ✅" else "OFF ❌") +
             "\nUninstall protection: " + (if (d) "ON ✅" else "OFF ❌")
         btnAccess.visibility = if (a) View.GONE else View.VISIBLE
         btnAdmin.visibility = if (d) View.GONE else View.VISIBLE
@@ -345,13 +340,23 @@ class MainActivity : AppCompatActivity() {
         return String.format("%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
     }
 
-    private fun isServiceEnabled(): Boolean {
-        val enabled = Settings.Secure.getString(
-            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        val cn = ComponentName(this, StrictBlockerService::class.java)
-        return enabled.split(':').any {
-            it.equals(cn.flattenToString(), true) || it.equals(cn.flattenToShortString(), true)
+    private fun hasUsageAccess(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = if (android.os.Build.VERSION.SDK_INT >= 29) {
+            appOps.unsafeCheckOpNoThrow("android:get_usage_stats", android.os.Process.myUid(), packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow("android:get_usage_stats", android.os.Process.myUid(), packageName)
+        }
+        return mode == android.app.AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun startUsageMonitor() {
+        val intent = Intent(this, UsageMonitorService::class.java)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not start monitor. Allow background activity for Strict Focus.", Toast.LENGTH_LONG).show()
         }
     }
 }
